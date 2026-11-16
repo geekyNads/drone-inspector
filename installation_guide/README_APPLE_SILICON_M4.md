@@ -32,8 +32,8 @@ xhost + 127.0.0.1
 ## 2. Get the code
 
 ```bash
-git clone https://github.com/BigCoder-ops/drone-px4-ros2-yolo-sim.git ~/quard_um6p_intership
-cd ~/quard_um6p_intership && git lfs pull
+git clone https://github.com/BigCoder-ops/drone-px4-ros2-yolo-sim.git ~/drone-inspector
+cd ~/drone-inspector && git lfs pull
 ```
 
 ## 3. Build and run in the arm64 container

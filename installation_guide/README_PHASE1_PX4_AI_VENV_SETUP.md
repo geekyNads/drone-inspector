@@ -16,7 +16,7 @@ At the end of this phase, the computer should have:
 Operating system:        Ubuntu 22.04 LTS
 System Python:           Python 3.10
 ROS 2:                   Humble under /opt/ros/humble
-Project folder:          ${HOME}/quard_um6p_intership
+Project folder:          ${HOME}/drone-inspector
 Virtual environment:     ${HOME}/px4-venv
 NumPy:                    1.26.4
 OpenCV Python:            4.11.0.86
@@ -75,7 +75,7 @@ Follow these rules for the complete internship:
 Open a new terminal:
 
 ```bash
-cd "${HOME}/quard_um6p_intership"
+cd "${HOME}/drone-inspector"
 ```
 
 Confirm the current path:
@@ -87,7 +87,7 @@ pwd
 Expected form:
 
 ```text
-/home/<student_username>/quard_um6p_intership
+/home/<student_username>/drone-inspector
 ```
 
 Load the project configuration:
@@ -630,7 +630,7 @@ GPU          : NVIDIA GeForce RTX 4080 SUPER
 Load the project configuration:
 
 ```bash
-cd "${HOME}/quard_um6p_intership"
+cd "${HOME}/drone-inspector"
 source ./config/project.env
 ```
 
@@ -710,7 +710,7 @@ The `requirements-ai.txt` file records direct project choices. The freeze file r
 For perception or AI execution, use:
 
 ```bash
-cd "${HOME}/quard_um6p_intership"
+cd "${HOME}/drone-inspector"
 
 source ./config/project.env
 source /opt/ros/humble/setup.bash

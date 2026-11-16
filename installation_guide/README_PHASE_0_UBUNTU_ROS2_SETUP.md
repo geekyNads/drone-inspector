@@ -15,7 +15,7 @@ Operating system:       Ubuntu 22.04 LTS, 64-bit
 System Python:          Python 3.10
 ROS 2 distribution:    Humble Hawksbill
 ROS 2 installation:    /opt/ros/humble
-Project directory:      ${HOME}/quard_um6p_intership
+Project directory:      ${HOME}/drone-inspector
 Future AI environment: ${HOME}/px4-venv
 GPU:                    NVIDIA GeForce RTX series, if available
 ```
@@ -554,7 +554,7 @@ Confirm all items:
 - [ ] Turtlesim opens.
 - [ ] `cv_bridge`, `ros_gz_bridge` and `ros_gz_image` are discoverable.
 - [ ] `rosdep update` completes successfully.
-- [ ] `${HOME}/quard_um6p_intership` exists.
+- [ ] `${HOME}/drone-inspector` exists.
 
 ---
 

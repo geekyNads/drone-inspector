@@ -8,7 +8,7 @@ services:
       context: .
       args:
         TORCH: ${TORCH:-cpu}
-    image: quard-um6p-sim
+    image: drone-inspector-sim
     stdin_open: true
     tty: true
     network_mode: host
