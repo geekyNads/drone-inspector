@@ -399,3 +399,7 @@ Check the original repository for its license terms before reusing or redistribu
 ## Apple Silicon (M4) Macs
 
 See [installation_guide/README_APPLE_SILICON_M4.md](installation_guide/README_APPLE_SILICON_M4.md). It runs in an arm64 Ubuntu 22.04 container through `docker-compose.mac.yml`, and YOLO can use the Mac GPU (MPS) natively.
+
+## Credits
+
+This project is based on the original repository [BigCoder-ops/drone-px4-ros2-yolo-sim](https://github.com/BigCoder-ops/drone-px4-ros2-yolo-sim), a PX4 + ROS 2 + Gazebo + YOLO drone simulation. Thanks to its authors for the original work. The changes in this repository (predefined-area patrol, ground-station telemetry, and Apple Silicon support) build on it.
