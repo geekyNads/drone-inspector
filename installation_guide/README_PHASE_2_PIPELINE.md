@@ -41,7 +41,7 @@ The matching PX4 and `px4_msgs` branches are important because ROS 2 application
 The project structure OJECTIVE is:
 
 ```text
-quard_um6p_intership/
+drone-inspector/
 ├── config/
 │   ├── project.env
 │   ├── DDS_AGENT_COMMIT.txt
@@ -89,7 +89,7 @@ PX4 and `px4_msgs` must use matching release branches because the ROS 2 message 
 The repositories are stored inside the project:
 
 ```text
-${HOME}/quard_um6p_intership/
+${HOME}/drone-inspector/
 ├── config/
 │   ├── project.env
 │   ├── PX4_COMMIT.txt
@@ -108,7 +108,7 @@ ${HOME}/quard_um6p_intership/
 Run:
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 chmod +x scripts/02_download_sources.sh
 ./scripts/02_download_sources.sh
 ```
@@ -123,7 +123,7 @@ PX4 release/1.15 matches px4_msgs release/1.15.
 Verify manually:
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 
 git -C "${PX4_DIR}" branch --show-current
@@ -159,7 +159,7 @@ Do not continue if one comparison does not print `MATCH`.
 Run the setup tool from the checked-out PX4 v1.15 source:
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 cd "${PX4_DIR}"
 
@@ -175,7 +175,7 @@ sudo reboot
 Build PX4 SITL:
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 cd "${PX4_DIR}"
 
@@ -192,7 +192,7 @@ test -x "${PX4_DIR}/build/px4_sitl_default/bin/px4" \
 ## 3.4 Build and install the DDS Agent
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 cd "${DDS_AGENT_DIR}"
 
@@ -214,7 +214,7 @@ MicroXRCEAgent --help | head
 ## 3.5 Build the ROS 2 workspace
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 source /opt/ros/humble/setup.bash
 cd "${ROS2_WS}"
@@ -255,7 +255,7 @@ if [ -f /opt/ros/humble/setup.bash ]; then
 fi
 
 # Project root and fixed dependency paths
-export INTERNSHIP_ROOT="$HOME/quard_um6p_intership"
+export INTERNSHIP_ROOT="$HOME/drone-inspector"
 
 if [ -f "$INTERNSHIP_ROOT/config/project.env" ]; then
     source "$INTERNSHIP_ROOT/config/project.env"
@@ -335,7 +335,7 @@ Open a Terminator window and split it into at least six terminals. Run the termi
 ## Terminal 1 - Micro XRCE-DDS Agent
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 cd "${DDS_AGENT_DIR}"
 
@@ -349,7 +349,7 @@ Keep this terminal running. The agent connects PX4's uXRCE-DDS client to ROS 2 o
 ## Terminal 2 - PX4 v1.15 and Gazebo with `x500_depth`
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 cd "${PX4_DIR}"
 
@@ -385,7 +385,7 @@ to:
 First discover the running world name:
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 
 gz service -l | grep '/world/.*/create'
@@ -414,7 +414,7 @@ The local demonstration layout is:
 Set shared variables:
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 
 WORLD_NAME="default"
@@ -559,7 +559,7 @@ Do not proceed until an image is visible. If the camera sees only sky, ground, o
 ## Terminal 5 - Run the orbit mission
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 source config/project.env
 source /opt/ros/humble/setup.bash
 source /home/<user_name>/px4-venv/bin/activate
@@ -595,8 +595,8 @@ ros2 topic echo /fmu/out/vehicle_odometry --once
 ```bash
 source /opt/ros/humble/setup.bash
 source /home/<user_name>/px4-venv/bin/activate
-source ~/quard_um6p_intership/ros2_ws/install/setup.bash
-cd ~/quard_um6p_intership/perception/yolo
+source ~/drone-inspector/ros2_ws/install/setup.bash
+cd ~/drone-inspector/perception/yolo
 
 python -u uav_camera_det.py
 ```
@@ -614,7 +614,7 @@ rqt_graph
 Record a complete experiment:
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 mkdir -p data/bags
 
 ros2 bag record \
@@ -639,8 +639,8 @@ First inspect available executables:
 ```bash
 source /opt/ros/humble/setup.bash
 source /home/<user_name>/px4-venv/bin/activate
-source ~/quard_um6p_intership/ros2_ws/install/setup.bash
-cd ~/quard_um6p_intership/tools/mavsdk_teleop
+source ~/drone-inspector/ros2_ws/install/setup.bash
+cd ~/drone-inspector/tools/mavsdk_teleop
 
 python -u keyboard_mavsdk_control.py
 

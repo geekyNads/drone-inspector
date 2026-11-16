@@ -12,7 +12,7 @@ services:
       context: .
       args:
         TORCH: cpu
-    image: quard-um6p-sim-arm64
+    image: drone-inspector-sim-arm64
     stdin_open: true
     tty: true
     environment:

@@ -82,8 +82,8 @@ The folder name and location matter. Clone it into your home directory with exac
 
 ```bash
 sudo apt update && sudo apt install -y git git-lfs
-git clone https://github.com/geekyNads/drone-inspector.git ~/quard_um6p_intership
-cd ~/quard_um6p_intership
+git clone https://github.com/geekyNads/drone-inspector.git ~/drone-inspector
+cd ~/drone-inspector
 git lfs pull
 ```
 
@@ -109,7 +109,7 @@ This takes **1 to 2 hours** (ROS 2, PX4 build, PyTorch). You can safely re-run i
 Open a **normal terminal** (not inside an existing `tmux` session):
 
 ```bash
-cd ~/quard_um6p_intership
+cd ~/drone-inspector
 
 ./sim.sh                 # orbit inspection (empty world + car, pickup, person)
 ./sim.sh --sar           # search and rescue in the PHOENIX mine world
@@ -295,7 +295,7 @@ The easiest way is `./sim.sh --teleop` (or `--all`), which opens a `teleop` tab.
 
 ```bash
 source ~/px4-venv/bin/activate
-cd ~/quard_um6p_intership/tools/mavsdk_teleop
+cd ~/drone-inspector/tools/mavsdk_teleop
 python -u keyboard_mavsdk_control.py
 ```
 
@@ -341,7 +341,7 @@ In a terminal you opened yourself, load the project first: `source config/projec
 ## Repository layout
 
 ```text
-quard_um6p_intership/
+drone-inspector/
 ├── sim.sh                 # one-command launcher: orbit, SAR or patrol, any world
 ├── config/                # project paths and pinned commits (PX4, px4_msgs, DDS Agent)
 ├── gazebo/
@@ -396,7 +396,7 @@ Apple Silicon runs an arm64 Ubuntu 22.04 container natively, so there is no emul
 
 | Problem | Fix |
 | --- | --- |
-| `must live at ~/quard_um6p_intership` | Clone or move the repo to that exact folder |
+| `must live at ~/drone-inspector` | Clone or move the repo to that exact folder |
 | No Gazebo window | In Windows PowerShell: `wsl --update`, then `wsl --shutdown`, then reopen Ubuntu |
 | Black or very slow Gazebo, no GPU | `export LIBGL_ALWAYS_SOFTWARE=1` before `./sim.sh` |
 | `You are inside the simulation tabs` | Press `Ctrl+b` then `d`, then run `./sim.sh` again |
@@ -419,7 +419,7 @@ For deeper details, see the guides in `installation_guide/` and `docs/`.
 
 Drone-Inspector builds on these projects:
 
-- **QUARD UM6P Autonomous Drone Engineering Internship** by **abdtnourji**: https://github.com/abdtnourji/quard_um6p_intership. The original simulation, orbit mission and installation guides come from this repository.
+- **QUARD UM6P Autonomous Drone Engineering Internship** by **abdtnourji**: https://github.com/abdtnourji/drone-inspector. The original simulation, orbit mission and installation guides come from this repository.
 - **BigCoder-ops/drone-px4-ros2-yolo-sim**: https://github.com/BigCoder-ops/drone-px4-ros2-yolo-sim. This is the repository the current code was taken from. It includes the `sim.sh` launcher, the PHOENIX mine world and the search-and-rescue mission.
 
 Open-source tools used: [PX4 Autopilot](https://github.com/PX4/PX4-Autopilot), [ROS 2 Humble](https://docs.ros.org/en/humble/), [Gazebo](https://gazebosim.org/), [Micro XRCE-DDS Agent](https://github.com/eProsima/Micro-XRCE-DDS-Agent) and [Ultralytics YOLO](https://github.com/ultralytics/ultralytics).

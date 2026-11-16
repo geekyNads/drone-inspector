@@ -21,7 +21,7 @@
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EXPECTED_ROOT="${HOME}/quard_um6p_intership"
+EXPECTED_ROOT="${HOME}/drone-inspector"
 TORCH_MODE="auto"
 
 for arg in "$@"; do
@@ -332,7 +332,7 @@ if [ -f /opt/ros/humble/setup.bash ]; then
 fi
 
 # Project root and fixed dependency paths
-export INTERNSHIP_ROOT="$HOME/quard_um6p_intership"
+export INTERNSHIP_ROOT="$HOME/drone-inspector"
 if [ -f "$INTERNSHIP_ROOT/config/project.env" ]; then
     source "$INTERNSHIP_ROOT/config/project.env"
 fi

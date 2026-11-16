@@ -15,13 +15,13 @@ The step-by-step guides in this folder stay valid; the script just runs them in 
 ```bash
 cd ~
 git clone https://github.com/BigCoder-ops/drone-px4-ros2-yolo-sim.git
-cd quard_um6p_intership
+cd drone-inspector
 git lfs pull                      # only needed if weights are stored with Git LFS
 chmod +x scripts/*.sh
 ./scripts/setup_all.sh            # auto-detects GPU; or add --cpu / --gpu
 ```
 
-The project **must** be at `~/quard_um6p_intership` (the guides rely on this path).
+The project **must** be at `~/drone-inspector` (the guides rely on this path).
 Expect 1-2 hours. The script is safe to re-run: finished steps are skipped
 (state is kept in `.setup_state/`, log in `logs/setup_all.log`).
 
@@ -65,6 +65,6 @@ The `x500_depth` camera tilt is applied automatically, because that file lives i
 
 - **No Gazebo window**: run `wsl --update` in Windows PowerShell, then `wsl --shutdown` and reopen Ubuntu.
 - **Slow or black Gazebo without a GPU**: `export LIBGL_ALWAYS_SOFTWARE=1` before `run_sim.sh`.
-- **`ERROR: ... must live at ~/quard_um6p_intership`**: move or re-clone the repo to your home directory.
+- **`ERROR: ... must live at ~/drone-inspector`**: move or re-clone the repo to your home directory.
 - **GitHub API rate limit during ROS setup**: wait a few minutes and re-run.
 - Anything else: see the failing phase's own guide in this folder.

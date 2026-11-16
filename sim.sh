@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  sim.sh - start the whole PX4 + Gazebo + ROS 2 orbit-inspection simulation
-#           with ONE command (quard_um6p_intership).
+#           with ONE command (drone-inspector).
 #
-#  Put this file in the root of the repo (~/quard_um6p_intership/sim.sh), then:
+#  Put this file in the root of the repo (~/drone-inspector/sim.sh), then:
 #     chmod +x sim.sh
 #
 #  ./sim.sh                        default world + inspection objects + camera + orbit nodes
