@@ -1,36 +1,30 @@
-# Drone Simulation: PX4 + ROS 2 + Gazebo + YOLO
+# Drone-Inspector
 
-A ready-to-run drone simulation that you can set up with **one script** instead of installing every dependency by hand. It includes two missions:
+Drone-Inspector is an autonomous drone simulation for infrastructure inspection and emergency response. It runs on PX4 + ROS 2 + Gazebo + YOLO, and it is set up with one script instead of many hand-installed dependencies.
 
-1. **Orbit inspection.** A virtual drone takes off in Gazebo and flies an orbit around inspection targets (a car, a pickup truck and a person). A YOLO model detects those objects live from the drone's camera.
-2. **PHOENIX mine search and rescue.** The drone flies into an open-pit phosphate mine and enters an underground tunnel network. It searches the tunnels on its own, finds an injured worker and raises an alert, then flies home and lands.
+The simulated drone can:
 
-![PHOENIX mine world](docs/phoenix_mine_world/preview/phoenix_mine_preview.png)
+1. **Patrol a predefined area** in a lawnmower pattern, then return home and land.
+2. **Detect objects and emergencies** with an onboard YOLO model: people are flagged as emergencies, and infrastructure damage is flagged when custom weights are used.
+3. **Send information to a ground station in real time**: mission progress and detections go out as JSON over UDP, and every detection is logged with the drone's position.
 
-## What's new
+It also includes an orbit-inspection mission and a search-and-rescue mission in a simulated open-pit mine (the PHOENIX mine world).
 
-| New | What it gives you |
+## Features
+
+| Feature | What it does |
 | --- | --- |
-| **`sim.sh` launcher** | One command starts everything in the right order and waits for each part to be ready. Mission shortcuts such as `orbit_start` and `sar_start` are built in. `./sim.sh stop` cleans up everything, including Gazebo. |
-| **PHOENIX mine world** (`gazebo/worlds/phoenix_mine.sdf`) | A surface base with a home pad, ground station and solar charger. An open-pit mine with benches and a portal into a dark underground room-and-pillar panel. Rubble, cables, a loader and a victim to find. |
-| **Search-and-rescue mission** (`missions/mine_sar_mission.py`) | A fully autonomous flight: take-off, the pit, the tunnel, a room-by-room search, victim detection, marking, then the return home by the shortest explored path and the landing. |
-| **Victim alert** | A pop-up window with a beep, a red marker and beacon in Gazebo, a red `tmux` bar, a camera snapshot saved as evidence, and a `/sar/alert` topic. |
-| **More reliable start on WSL** | Gazebo starts first and the drone is spawned before PX4 connects to it. Slow world loads no longer make PX4 quit with `gz_bridge failed to start`. |
+| **Area patrol** (`./sim.sh --patrol`) | Flies a lawnmower route over the rectangle set in `config/area_patrol.yaml`, then returns home and lands. |
+| **Detection and emergency flags** | YOLO detections are labelled `emergency` (person) or `damage` (custom weights such as crack or spalling). Each detection is written to `data/inspection_report.csv` with the drone's position. |
+| **Ground-station link** | Progress and detections are sent as JSON over UDP to `GROUND_STATION_HOST:GROUND_STATION_PORT` (default `127.0.0.1:14560`). Listen with `nc -ul 14560`. |
+| **Orbit inspection** (`./sim.sh`) | The drone orbits a car, a pickup and a person while YOLO detects them. |
+| **Search and rescue** (`./sim.sh --sar`) | The drone enters the PHOENIX mine, searches the tunnels, finds an injured worker, raises an alert and returns home. |
+| **One-command launcher** (`sim.sh`) | Starts every process in the right order and waits for each one to be ready. `./sim.sh stop` cleans up. |
+| **Apple Silicon (M4) support** | Runs in an arm64 Ubuntu container (`docker-compose.mac.yml`). YOLO uses the Mac GPU (MPS) when it runs natively. See [installation_guide/README_APPLE_SILICON_M4.md](installation_guide/README_APPLE_SILICON_M4.md). |
 
-## Why this repository exists
+> Simulation only. This project is not intended for flying real aircraft.
 
-Running a PX4 + ROS 2 + Gazebo + YOLO simulation normally means following several long guides: ROS 2 Humble, PX4 v1.15, Gazebo, the Micro XRCE-DDS Agent, a Python environment with exact library versions, and a workspace build. One wrong version and nothing works.
-
-The goal of this repo is to make that **reproducible for everyone**:
-
-- **One command to install** everything with the right pinned versions.
-- **One command to run** the whole simulation, with every process started in the right order.
-- **Works on WSL2**, so Windows users don't need to dual boot.
-- **Works with or without an NVIDIA GPU**: YOLO runs on CPU, or on CUDA if available.
-
-It is meant for students, researchers and hobbyists who want to experiment with autonomous drones and computer vision without spending days on setup.
-
-## What the simulation does
+## Architecture
 
 ```text
                  sensors (IMU, GPS, baro)
@@ -40,34 +34,36 @@ It is meant for students, researchers and hobbyists who want to experiment with 
       | camera                                       | Micro XRCE-DDS Agent
       v                                              v
    ROS 2 image bridge                    ROS 2 network (your nodes)
-      |  /camera/image_raw              - orbit_controller    (orbit mission)
-      +------------------------------>  - mine_sar_mission    (search & rescue)
-                                        - mission_monitor     (altitude, speed)
-                                        - YOLO detection      (/inspection/detections)
+      |  /camera/image_raw              - area_patrol_mission  (patrol)
+      +------------------------------>  - orbit_controller     (orbit)
+                                        - mine_sar_mission     (search & rescue)
+                                        - mission_monitor      (altitude, speed)
+                                        - YOLO detection       (/inspection/detections)
+                                                 |
+                                                 v  UDP JSON
+                                          ground station (port 14560)
 ```
 
 - **PX4 v1.15 SITL** flies the drone (software-in-the-loop, no hardware needed).
 - **Gazebo** simulates the world, the drone and its camera.
-- **ROS 2 Humble** connects everything. Your mission nodes send setpoints to PX4 and read its odometry.
-- **YOLOv8** detects objects in the camera stream.
+- **ROS 2 Humble** connects everything. Mission nodes send setpoints to PX4 and read its odometry.
+- **YOLOv8** (Ultralytics) detects objects in the camera stream.
 - **MAVSDK keyboard teleop** lets you fly manually.
-
-> Simulation only. This repository is not intended for flying real aircraft.
 
 ## Requirements
 
 | Item | Requirement |
 | --- | --- |
-| OS | Ubuntu **22.04** (native or WSL2) |
+| OS | Ubuntu **22.04** (native or WSL2), or an arm64 Ubuntu 22.04 container on Apple Silicon |
 | Windows users | Windows 10/11 with **WSL2 + WSLg** (for the Gazebo window) |
 | Disk space | about 25 GB free |
 | RAM | 16 GB recommended |
-| GPU | Optional. NVIDIA GPU with the driver installed on **Windows** (not inside WSL) |
+| GPU | Optional. NVIDIA GPU with the driver installed on **Windows** (not inside WSL). Apple Silicon uses MPS for YOLO when run natively. |
 | Internet | Needed during setup (large downloads) |
 
 Ubuntu 24.04 is **not** supported, because ROS 2 Humble targets Ubuntu 22.04.
 
-## Quick start
+## Quick start (Ubuntu 22.04 or WSL2)
 
 ### 1. Install Ubuntu 22.04 on WSL2 (Windows only)
 
@@ -86,7 +82,7 @@ The folder name and location matter. Clone it into your home directory with exac
 
 ```bash
 sudo apt update && sudo apt install -y git git-lfs
-git clone https://github.com/BigCoder-ops/drone-px4-ros2-yolo-sim.git ~/quard_um6p_intership
+git clone https://github.com/geekyNads/drone-inspector.git ~/quard_um6p_intership
 cd ~/quard_um6p_intership
 git lfs pull
 ```
@@ -108,22 +104,23 @@ The script auto-detects an NVIDIA GPU. You can also force a mode:
 
 This takes **1 to 2 hours** (ROS 2, PX4 build, PyTorch). You can safely re-run it if it stops, because finished steps are skipped. Progress is saved in `logs/setup_all.log`.
 
-### 4. Run the simulation
+### 4. Run a mission
 
-Open a **normal terminal** (not inside an existing `tmux` session), then pick a mission:
+Open a **normal terminal** (not inside an existing `tmux` session):
 
 ```bash
 cd ~/quard_um6p_intership
 
 ./sim.sh                 # orbit inspection (empty world + car, pickup, person)
-./sim.sh --sar           # PHOENIX search & rescue in the mine world
+./sim.sh --sar           # search and rescue in the PHOENIX mine world
+./sim.sh --patrol        # lawnmower patrol over the predefined area
 ```
 
 `sim.sh` starts everything in this order and waits for each step before the next:
 
 ```text
-DDS agent -> Gazebo world -> spawn the drone -> PX4 attaches to it -> car/pickup/person
-          -> camera bridge -> mission node (orbit, or SAR + monitor)
+DDS agent -> Gazebo world -> spawn the drone -> PX4 attaches to it -> objects
+          -> camera bridge -> mission node (orbit, SAR or patrol)
 ```
 
 The first start can take 1–2 minutes on WSL, so wait for `[sim] All started`. Everything runs in one `tmux` session, with one tab per part:
@@ -135,8 +132,7 @@ The first start can take 1–2 minutes on WSL, so wait for `[sim] All started`. 
 | `gazebo` | Gazebo server with the selected world |
 | `px4` | PX4 SITL, attached to the `x500_depth_0` drone |
 | `camera` | Gazebo camera to ROS 2 (`/camera/image_raw`) |
-| `orbit` | Orbit mission nodes (with `./sim.sh`) |
-| `sar` + `monitor` | Search-and-rescue node + altitude/speed monitor (with `--sar`) |
+| `orbit`, `sar` + `monitor`, `patrol` | The mission node for the chosen mission |
 | `yolo`, `view`, `teleop`, `record` | Optional, see the options below |
 
 To get around:
@@ -144,7 +140,7 @@ To get around:
 - Press `Ctrl+b` then `d` to hide the session; it keeps running. `./sim.sh attach` brings it back.
 - **Do not press `Ctrl+C`** in the agent, gazebo, px4, camera or mission tabs, because that stops that part. Type your own commands in `control`, or open a new tab with `Ctrl+b` then `c`.
 
-### 5. Start the mission
+### 5. Control the mission
 
 In the `control` tab:
 
@@ -156,6 +152,7 @@ In the `control` tab:
 | `sar_status` | Follow the SAR mission live |
 | `sar_abort` | Fly home now, along the explored path |
 | `sar_land` | Land where the drone is |
+| `patrol_start` | Start the area patrol (`./sim.sh --patrol`) |
 | `graph` | Open `rqt_graph` (nodes and topics) |
 
 These are shortcuts for the usual ROS 2 calls, for example `ros2 service call /sar/start std_srvs/srv/Trigger "{}"`.
@@ -174,6 +171,7 @@ From a normal terminal (press `Ctrl+b` then `d` first if you are inside the sess
 | --- | --- |
 | `./sim.sh` | Orbit mission, default world |
 | `./sim.sh --sar` | Search-and-rescue mission (uses the `phoenix_mine` world automatically) |
+| `./sim.sh --patrol` | Area patrol (uses `config/area_patrol.yaml`) |
 | `./sim.sh --world phoenix_mine` | Orbit mission in the mine world |
 | `--yolo` | Also start YOLO detection |
 | `--view` | Also open the camera image (`rqt_image_view`) |
@@ -186,27 +184,42 @@ From a normal terminal (press `Ctrl+b` then `d` first if you are inside the sess
 | `./sim.sh attach` | Re-open the tabs after closing the terminal |
 | `./sim.sh stop` | Stop everything |
 
-The older launcher `./scripts/run_sim.sh` still works for the orbit demo in the default world.
+## Area patrol
 
-## PHOENIX mine world
+The drone climbs to the patrol altitude, flies back and forth across the rectangle, then flies home and lands. The area and altitude are set in `ros2_ws/src/px4_orbit_inspection/config/area_patrol.yaml`:
 
-`gazebo/worlds/phoenix_mine.sdf` models the PHOENIX scenario: mining inspection and emergency search and rescue in a phosphate mine. It is built only from simple shapes, so it needs no internet or model downloads.
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| `north_min_m`, `north_max_m` | -20, 20 | Patrol extent to the north of take-off (m) |
+| `east_min_m`, `east_max_m` | -20, 20 | Patrol extent to the east of take-off (m) |
+| `lane_spacing_m` | 8.0 | Distance between patrol lanes (m) |
+| `altitude_m` | 6.0 | Patrol altitude (m) |
+| `speed_m_s` | 2.0 | Flight speed between waypoints |
+| `ground_host`, `ground_port` | 127.0.0.1, 14560 | Where progress events are sent |
 
-| Place | Gazebo (x, y, z) | PX4 local (N, E, D) | Notes |
-| --- | --- | --- | --- |
-| Home pad (spawn) | 0, 0, 0 | 0, 0, 0 | Surface plateau, ground station, solar charger, wind sock |
-| Inspection silo | 0, 35, 0 | 35, 0, 0 | 14 m tall, 18 m clear around it, rust patches to inspect |
-| Open pit | x 50–120, y −35–35 | — | Two 4 m benches, floor at z = −12 |
-| Box-cut trench + Portal A | 50–60, 0, −12 | 0, 50, +12 | Tunnel entrance, steel arches, work lights |
-| Underground panel | x 14–48, y −22–22 | — | 4 m rooms, 12 pillars, dark on purpose |
-| Victim | 16, 20, −12 | 20, 16, +12 | Behind a roof-fall that blocks the direct route |
-| Safe landing point | 100, 15, −12 | 15, 100, +12 | Green pad on the pit floor (contingency) |
+Run the node by hand with `ros2 run px4_orbit_inspection area_patrol_mission`, then call `/patrol/start`.
 
-Gazebo uses ENU (x = east, y = north). PX4 uses NED (x = north, y = east, z = down). The pit floor is 12 m **below** home, so its PX4 z is positive.
+## Detection, reporting and the ground station
 
-Underground hazards include a low cable across the main drift, a ventilation duct, an abandoned loader, a water puddle and the roof-fall. Details, previews and the world generator are in [`docs/phoenix_mine_world/`](docs/phoenix_mine_world/README.md).
+`perception/yolo/uav_camera_det.py` runs YOLOv8 on the camera stream. For each detection it:
 
-## Search-and-rescue mission
+- sends a JSON event to the ground station (type `detection`, with `category` set to `emergency`, `damage` or `object`),
+- appends a row to `data/inspection_report.csv` with the time, class, confidence, position (north, east, altitude), inference time and bounding box.
+
+Environment variables (all optional):
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `YOLO_WEIGHTS` | `yolov8m.pt` | Weights file. Use custom weights to detect damage such as cracks or spalling. |
+| `YOLO_CLASSES` | `0,2` | Class ids to keep (person and car in the default weights) |
+| `YOLO_DEVICE` | auto | `cpu`, `mps` (Apple GPU) or `cuda`. Auto picks CUDA, then MPS, then CPU. |
+| `YOLO_VIEW` | `1` | `0` turns off the OpenCV window (headless machines) |
+| `GROUND_STATION_HOST`, `GROUND_STATION_PORT` | 127.0.0.1, 14560 | Ground-station address |
+| `REPORT_CSV` | `data/inspection_report.csv` | Where the report is written |
+
+> The default weights only know people and cars. Detecting infrastructure damage needs custom-trained weights.
+
+## Search-and-rescue mission (PHOENIX mine)
 
 ```bash
 ./sim.sh --sar        # then, in the control tab:
@@ -224,11 +237,7 @@ sar_start
 
 The victim is usually found 3–4 minutes after `sar_start`, and the whole mission takes about 6 minutes.
 
-![SAR mission route](docs/sar_mission/sar_mission_route.png)
-
 ### Victim alert
-
-When the victim is found, everything below happens automatically:
 
 | Where | What you see |
 | --- | --- |
@@ -238,8 +247,6 @@ When the victim is found, everything below happens automatically:
 | `sar` tab | A large red banner and a terminal bell |
 | Snapshot | `data/sar/victim_<date>_<time>.png`, the camera image at detection with a caption |
 | ROS 2 | `/sar/alert` (latched `String`) and `/sar/victim` (`PointStamped`, PX4 NED) |
-
-![Alert pop-up](docs/sar_mission/alert_popup_preview.png)
 
 ### Mission options
 
@@ -264,27 +271,23 @@ python3 -u missions/mine_sar_mission.py --ros-args -p speed_tunnel:=0.8 -p therm
 
 More details: [`docs/sar_mission/README.md`](docs/sar_mission/README.md).
 
-## Useful commands
+## PHOENIX mine world
 
-```bash
-# View the camera
-ros2 run rqt_image_view rqt_image_view /camera/image_raw
+`gazebo/worlds/phoenix_mine.sdf` models a phosphate mine: a surface base, an open pit, and an underground room-and-pillar panel. It is built only from simple shapes, so it needs no internet or model downloads.
 
-# Check the camera rate
-ros2 topic hz /camera/image_raw
+| Place | Gazebo (x, y, z) | PX4 local (N, E, D) | Notes |
+| --- | --- | --- | --- |
+| Home pad (spawn) | 0, 0, 0 | 0, 0, 0 | Surface plateau, ground station, solar charger, wind sock |
+| Inspection silo | 0, 35, 0 | 35, 0, 0 | 14 m tall, 18 m clear around it, rust patches to inspect |
+| Open pit | x 50–120, y −35–35 | — | Two 4 m benches, floor at z = −12 |
+| Box-cut trench + Portal A | 50–60, 0, −12 | 0, 50, +12 | Tunnel entrance, steel arches, work lights |
+| Underground panel | x 14–48, y −22–22 | — | 4 m rooms, 12 pillars, dark on purpose |
+| Victim | 16, 20, −12 | 20, 16, +12 | Behind a roof-fall that blocks the direct route |
+| Safe landing point | 100, 15, −12 | 15, 100, +12 | Green pad on the pit floor (contingency) |
 
-# Follow the SAR mission / see the alert
-ros2 topic echo /sar/status
-ros2 topic echo /sar/alert
+Gazebo uses ENU (x = east, y = north). PX4 uses NED (x = north, y = east, z = down). The pit floor is 12 m **below** home, so its PX4 z is positive.
 
-# Record an experiment (or start with ./sim.sh --record)
-mkdir -p data/bags
-ros2 bag record -o data/bags/run_01 \
-  /camera/image_raw /inspection/debug_image /inspection/detections \
-  /fmu/out/vehicle_odometry /fmu/out/vehicle_status /fmu/in/trajectory_setpoint
-```
-
-In a terminal you opened yourself, load the project first: `source config/project.env && source /opt/ros/humble/setup.bash`. The project uses `ROS_DOMAIN_ID=23`, so without it `ros2` cannot see the nodes.
+Underground hazards include a low cable across the main drift, a ventilation duct, an abandoned loader, a water puddle and the roof-fall. Details and the world generator are in [`docs/phoenix_mine_world/`](docs/phoenix_mine_world/README.md).
 
 ## Manual flight with the keyboard
 
@@ -308,31 +311,55 @@ A small window opens. **Click on it**, because the keys are read from that windo
 | `i` | Print flight mode |
 | `Ctrl+C` | Quit |
 
-Do not use the keyboard while the orbit or SAR mission is flying, because they fight for control. Abort the mission first. In the mine world the drone starts facing east, so forward (↑) flies toward the pit.
+Do not use the keyboard while a mission is flying, because they fight for control. Abort the mission first. In the mine world the drone starts facing east, so forward (↑) flies toward the pit.
+
+## Useful commands
+
+```bash
+# View the camera
+ros2 run rqt_image_view rqt_image_view /camera/image_raw
+
+# Check the camera rate
+ros2 topic hz /camera/image_raw
+
+# Follow the SAR mission / see the alert
+ros2 topic echo /sar/status
+ros2 topic echo /sar/alert
+
+# Record an experiment (or start with ./sim.sh --record)
+mkdir -p data/bags
+ros2 bag record -o data/bags/run_01 \
+  /camera/image_raw /inspection/debug_image /inspection/detections \
+  /fmu/out/vehicle_odometry /fmu/out/vehicle_status /fmu/in/trajectory_setpoint
+
+# Listen to the ground-station feed
+nc -ul 14560
+```
+
+In a terminal you opened yourself, load the project first: `source config/project.env && source /opt/ros/humble/setup.bash`. The project uses `ROS_DOMAIN_ID=23`, so without it `ros2` cannot see the nodes.
 
 ## Repository layout
 
 ```text
 quard_um6p_intership/
-├── sim.sh               # one-command launcher: orbit or SAR mission, any world
-├── config/              # project paths and pinned commits (PX4, px4_msgs, DDS Agent)
+├── sim.sh                 # one-command launcher: orbit, SAR or patrol, any world
+├── config/                # project paths and pinned commits (PX4, px4_msgs, DDS Agent)
 ├── gazebo/
-│   ├── worlds/          # phoenix_mine.sdf (PHOENIX mine), legacy_inspection.sdf
-│   └── models/          # inspection models (car, pickup, person, ...)
-├── missions/            # mine_sar_mission.py - PHOENIX search-and-rescue node
-├── models/yolo/         # YOLO weights
-├── perception/yolo/     # YOLO camera detection node
-├── ros2_ws/src/         # px4_orbit_inspection package (px4_msgs is downloaded)
-├── tools/mavsdk_teleop/ # keyboard flight control
-├── docs/
-│   ├── phoenix_mine_world/  # world README, previews, make_world.py (world generator)
-│   └── sar_mission/         # mission README, route figure, alert preview
+│   ├── worlds/            # phoenix_mine.sdf (PHOENIX mine), legacy_inspection.sdf
+│   └── models/            # inspection models (car, pickup, person, ...)
+├── missions/              # mine_sar_mission.py - search-and-rescue node
+├── models/yolo/           # YOLO weights
+├── perception/yolo/       # YOLO detection, reporting and ground-station node
+├── ros2_ws/src/           # px4_orbit_inspection package (orbit, patrol, telemetry)
+├── tools/mavsdk_teleop/   # keyboard flight control
+├── docs/                  # world, mission and design notes
 ├── scripts/
-│   ├── setup_all.sh     # one-command installer
-│   ├── run_sim.sh       # older launcher (orbit demo)
-│   ├── spawn_objects.sh # adds objects to the Gazebo world
+│   ├── setup_all.sh       # one-command installer
+│   ├── run_sim.sh         # older launcher (orbit demo)
+│   ├── spawn_objects.sh   # adds objects to the Gazebo world
 │   └── 02_download_sources.sh  # clones PX4 / px4_msgs / DDS Agent at pinned commits
-└── installation_guide/  # detailed step-by-step guides (Phase 0, 1, 2)
+├── installation_guide/    # step-by-step guides (Ubuntu, phases, Apple Silicon)
+└── docker-compose.mac.yml # Apple Silicon (arm64) container
 ```
 
 ## What is not stored in this repository
@@ -352,11 +379,18 @@ The pinned versions keep the setup reproducible: PX4 `release/1.15` and `px4_msg
 ## Docker (alternative)
 
 ```bash
-docker compose up --build                                                  # CPU
+docker compose up --build                                                             # CPU, Linux / WSL
 TORCH=gpu docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build   # NVIDIA GPU
+docker compose -f docker-compose.mac.yml up --build                                   # Apple Silicon (arm64, CPU)
 ```
 
-The image is very large and slow to build. The script-based install above is the recommended path.
+The image is very large and slow to build. The script-based install above is the recommended path on Linux and WSL.
+
+## Apple Silicon (M4) Macs
+
+Apple Silicon runs an arm64 Ubuntu 22.04 container natively, so there is no emulation. The Gazebo window needs XQuartz, and the container runs YOLO on the CPU. For GPU detection, run `perception/yolo` natively on the Mac, where it uses MPS. Full steps are in [installation_guide/README_APPLE_SILICON_M4.md](installation_guide/README_APPLE_SILICON_M4.md).
+
+> The Apple Silicon path has not been run on hardware yet.
 
 ## Troubleshooting
 
@@ -368,7 +402,7 @@ The image is very large and slow to build. The script-based install above is the
 | `You are inside the simulation tabs` | Press `Ctrl+b` then `d`, then run `./sim.sh` again |
 | `gz_bridge failed to start` / `Service call timed out` in the `px4` tab | Happens with `run_sim.sh` when the world loads slowly. Use `./sim.sh`, which spawns the drone first. If the drone is already in Gazebo, run this in the px4 tab: `PX4_GZ_STANDALONE=1 PX4_GZ_WORLD=phoenix_mine PX4_GZ_MODEL_NAME=x500_depth_0 PX4_SYS_AUTOSTART=4002 ./build/px4_sitl_default/bin/px4` |
 | `Waiting for PX4 <-> ROS 2 link ... not ready` | The script continues anyway. If `sar_start` answers `no odometry from PX4 yet`, check the `agent` and `px4` tabs |
-| `orbit_start: command not found` | The shortcuts exist in the `control` tab. Elsewhere, use the full `ros2 service call ...` command after loading the project (see Useful commands) |
+| `orbit_start: command not found` | The shortcuts exist in the `control` tab. Elsewhere, use the full `ros2 service call ...` command after loading the project |
 | Mission nodes died with `rcl_shutdown already called` | Someone pressed `Ctrl+C` in the mission tab. Restart that tab's command, and type commands in `control` instead |
 | No alert pop-up | `sudo apt install python3-tk`. The other alerts still work without it |
 | No red markers in Gazebo | The Gazebo window must be open (do not use `--headless`) |
@@ -383,23 +417,11 @@ For deeper details, see the guides in `installation_guide/` and `docs/`.
 
 ## Credits
 
-This project is based on the **QUARD UM6P Autonomous Drone Engineering Internship** repository by **abdtnourji**:
-https://github.com/abdtnourji/quard_um6p_intership
+Drone-Inspector builds on these projects:
 
-This repository adds a one-command installer, the `sim.sh` launcher, Docker files, the PHOENIX mine world, the autonomous search-and-rescue mission with victim alerts, and a rewritten README so that anyone can reproduce the simulation. It also builds on these open-source projects: [PX4 Autopilot](https://github.com/PX4/PX4-Autopilot), [ROS 2 Humble](https://docs.ros.org/en/humble/), [Gazebo](https://gazebosim.org/), [Micro XRCE-DDS Agent](https://github.com/eProsima/Micro-XRCE-DDS-Agent) and [Ultralytics YOLO](https://github.com/ultralytics/ultralytics).
+- **QUARD UM6P Autonomous Drone Engineering Internship** by **abdtnourji**: https://github.com/abdtnourji/quard_um6p_intership. The original simulation, orbit mission and installation guides come from this repository.
+- **BigCoder-ops/drone-px4-ros2-yolo-sim**: https://github.com/BigCoder-ops/drone-px4-ros2-yolo-sim. This is the repository the current code was taken from. It includes the `sim.sh` launcher, the PHOENIX mine world and the search-and-rescue mission.
 
-Check the original repository for its license terms before reusing or redistributing the code.
+Open-source tools used: [PX4 Autopilot](https://github.com/PX4/PX4-Autopilot), [ROS 2 Humble](https://docs.ros.org/en/humble/), [Gazebo](https://gazebosim.org/), [Micro XRCE-DDS Agent](https://github.com/eProsima/Micro-XRCE-DDS-Agent) and [Ultralytics YOLO](https://github.com/ultralytics/ultralytics).
 
-## Problem-statement features
-
-- **Predefined-area patrol** (`./sim.sh --patrol`): the drone flies a lawnmower pattern over the rectangle set in `ros2_ws/src/px4_orbit_inspection/config/area_patrol.yaml`, then returns home and lands.
-- **Detection and emergency flags** (`perception/yolo/uav_camera_det.py`): YOLO detections are labelled `emergency` (a person) or `damage` (custom weights such as crack or spalling), and every detection is logged with the drone's position to `data/inspection_report.csv`.
-- **Ground-station link**: mission progress and detections are sent as JSON over UDP to `GROUND_STATION_HOST:GROUND_STATION_PORT` (default `127.0.0.1:14560`). Listen with `nc -ul 14560`.
-
-## Apple Silicon (M4) Macs
-
-See [installation_guide/README_APPLE_SILICON_M4.md](installation_guide/README_APPLE_SILICON_M4.md). It runs in an arm64 Ubuntu 22.04 container through `docker-compose.mac.yml`, and YOLO can use the Mac GPU (MPS) natively.
-
-## Credits
-
-This project is based on the original repository [BigCoder-ops/drone-px4-ros2-yolo-sim](https://github.com/BigCoder-ops/drone-px4-ros2-yolo-sim), a PX4 + ROS 2 + Gazebo + YOLO drone simulation. Thanks to its authors for the original work. The changes in this repository (predefined-area patrol, ground-station telemetry, and Apple Silicon support) build on it.
+Check the original repositories for their license terms before reusing or redistributing the code.
